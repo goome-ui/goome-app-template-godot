@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT: 4.7.2-stable
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            godot: linux.x86_64.zip
+            bin: Godot_v4.7.2-stable_linux.x86_64
+          - os: windows-latest
+            godot: win64.exe.zip
+            bin: Godot_v4.7.2-stable_win64_console.exe
+          - os: macos-latest
+            godot: macos.universal.zip
+            bin: Godot.app/Contents/MacOS/Godot
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: get goome
+        run: ./get-goome.sh
+      - name: get godot
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          curl -fsSL -o "$RUNNER_TEMP/godot.zip" "https://github.com/godotengine/godot/releases/download/$GODOT/Godot_v${GODOT}_${{ matrix.godot }}"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          echo "GD=$RUNNER_TEMP/godot/${{ matrix.bin }}" >> "$GITHUB_ENV"
+      - name: import
+        run: '"$GD" --headless --path . --import > /dev/null 2>&1 || true'
+      - name: runs
+        run: |
+          out=$("$GD" --headless --path . --quit-after 120 2>&1)
+          echo "$out"
+          ! echo "$out" | grep -q "SCRIPT ERROR\|^ERROR"
+      - name: toggle check
+        if: hashFiles('tests/check.tscn') != ''
+        run: |
+          out=$("$GD" --headless --path . res://tests/check.tscn 2>&1) || { echo "$out"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -q "check passed"
+          ! echo "$out" | grep -q "SCRIPT ERROR"
+      - name: other templates
+        if: hashFiles('variants/**') != ''
+        run: |
+          for v in variants/*/; do
+            n=$(basename "$v")
+            d="$RUNNER_TEMP/v/$n"
+            mkdir -p "$d"
+            cp -r project.godot main.tscn game.gd addons "$d/"
+            cp -r "$v"/. "$d/"
+            "$GD" --headless --path "$d" --import > /dev/null 2>&1 || true
+            out=$("$GD" --headless --path "$d" --quit-after 120 2>&1)
+            echo "$out"
+            ! echo "$out" | grep -q "SCRIPT ERROR\|^ERROR"
+          done
