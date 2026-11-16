@@ -6,6 +6,7 @@ const APP_NAME := "My Goome App"
 
 var clicks := 0
 var overlay := false
+var shown := false
 
 
 func _goome_frame(ui: GoomeUI) -> void:
@@ -25,7 +26,10 @@ func _goome_frame(ui: GoomeUI) -> void:
 func contents(ui: GoomeUI) -> void:
 	overlay = ui.toggle("Overlay mode", overlay)
 	ui.separator()
+	ui.push_color(GoomeUI.S_TEXT, ui.anim_color("hello", Color("f2f4f8") if shown else Color("f2f4f800"), 600, GoomeUI.EASE_OUT))
 	ui.heading("Hello from " + APP_NAME)
+	ui.pop()
+	shown = true
 	if ui.button("Click me"):
 		clicks += 1
 	ui.label("clicked %d times" % clicks)
