@@ -1,4 +1,4 @@
-param([string]$Version = $(if ($env:GOOME_VERSION) { $env:GOOME_VERSION } else { "0.5.2" }))
+param([string]$Version = $(if ($env:GOOME_VERSION) { $env:GOOME_VERSION } else { "0.5.3" }))
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 $zip = Join-Path $PSScriptRoot "goome-addon.zip"
