@@ -1,0 +1,28 @@
+name: update-goome
+
+on:
+  schedule:
+    - cron: '45 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-goome
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.repository == 'goome-ui/goome-app-template-godot'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.BOT_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.BOT_TOKEN || github.token }}
+      - name: bump goome
+        run: bash .github/update-goome.sh
